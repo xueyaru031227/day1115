@@ -1,0 +1,19 @@
+server:
+  port: 8088
+  servlet:
+    context-path: /
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/day1001?serverTimezone=UTC
+    username: root
+    password: "01030855"
+    type: com.alibaba.druid.pool.DruidDataSource
+
+mybatis-plus:
+  mapper-locations: /mapper/*.xml
+  type-aliases-package: com.lening.day1001.bean
+
+
+

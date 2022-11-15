@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+ <div id="app">
+     <el-button type="primary" @click="insertStudent">增加</el-button>
+     <el-form :inline="true" :model="query" class="demo-form-inline">
+         <el-form-item label="学生名称">
+             <el-input v-model="query.name" placeholder="请输入学生名称模糊查询"></el-input>
+         </el-form-item>
+         <el-form-item label="学生年龄">
+             <el-col :span="11">
+                 <el-input-number type="number" placeholder="选择年龄" v-model="query.age" style="width: 100%;"></el-input-number>
+             </el-col>
+             <el-col class="line" :span="2">-</el-col>
+             <el-col :span="11">
+                 <el-input-number type="number" placeholder="选择年龄" v-model="query.sage" style="width: 100%;"></el-input-number>
+             </el-col>
+         </el-form-item>
+         <el-form-item>
+             <el-button type="primary" @click="selectStudent">查询</el-button>
+         </el-form-item>
+     </el-form>
+     <template>
+         <el-table
+                 :data="TStudent"
+                 style="width: 100%"
+         >
+             <el-table-column
+                     prop="id"
+                     label="编号"
+             >
+             </el-table-column>
+
+             <el-table-column
+                     prop="name"
+                     label="学生名称"
+             >
+             </el-table-column>
+             <el-table-column
+                     prop="age"
+                     label="学生年龄">
+             </el-table-column>
+             <el-table-column
+                     prop="birthday"
+                     label="学生生日">
+             </el-table-column>
+             <el-table-column
+                     prop="tgrade.name"
+                     label="班级名称">
+             </el-table-column>
+             <el-table-column
+                     label="课程名称">
+                 <template slot-scope="scope">
+                     <span v-for="tcourse in scope.row.tcourses">{{tcourse.name}}&nbsp&nbsp</span>
+                 </template>
+             </el-table-column>
+             <el-table-column label="操作">
+                 <template slot-scope="scope">
+                     <el-button
+                             size="mini"
+                             @click="deleteStudent(scope.row)">删除</el-button>
+                     <el-button
+                             size="mini"
+                             @click="update(scope.row)">修改</el-button>
+                 </template>
+             </el-table-column>
+         </el-table>
+     </template>
+     <el-dialog
+             title="添加信息"
+             :visible.sync="dialogVisible"
+             width="30%"
+     >
+         <el-form :model="addform">
+             <el-form-item label="学生名称">
+                 <el-input v-model="addform.name" autocomplete="off"></el-input>
+             </el-form-item>
+             <el-form-item label="学生年龄" >
+                 <el-input v-model="addform.age" autocomplete="off"></el-input>
+             </el-form-item>
+             <el-form-item label="学生出生日期">
+                 <el-input type="date" v-model="addform.birthday" autocomplete="off"></el-input>
+             </el-form-item>
+             <el-form-item label="学生班级">
+                 <el-select v-model="addform.cid">
+                     <el-option
+                             v-for="grade in mers"
+                             :key="grade.id"
+                             :label="grade.name"
+                             :value="grade.id">
+                     </el-option>
+                 </el-select>
+             </el-form-item>
+             <el-form-item label="学生课程">
+                 <el-select v-model="addform.ids">
+                     <el-option
+                             v-for="course in courseList"
+                             :key="course.id"
+                             :label="course.name"
+                             :value="course.id">
+                     </el-option>
+                 </el-select>
+             </el-form-item>
+
+         </el-form>
+         <div slot="footer" class="dialog-footer">
+             <el-button @click="dialogFormVisible = false">取 消</el-button>
+             <el-button type="primary" @click="addStudent">添 加</el-button>
+         </div>
+     </el-dialog>
+     <el-dialog
+             title="修改信息"
+             :visible.sync="dialogVisible2"
+             width="30%"
+     >
+         <el-form :model="updateform">
+             <el-form-item label="学生名称" >
+                 <el-input v-model="updateform.name" autocomplete="off"></el-input>
+             </el-form-item>
+             <el-form-item label="学生年龄" >
+                 <el-input v-model="updateform.age" autocomplete="off"></el-input>
+             </el-form-item>
+             <el-form-item label="学生出生日期" >
+                 <el-input type="date" v-model="updateform.birthday" autocomplete="off"></el-input>
+             </el-form-item>
+
+         </el-form>
+         <div slot="footer" class="dialog-footer">
+             <el-button @click="dialogFormVisible = false">取 消</el-button>
+             <el-button type="primary" @click="updateStudent">修 改</el-button>
+         </div>
+     </el-dialog>
+ </div>
+
+<script src="js/vue.js"></script>
+<script src="js/jquery-3.3.1.min.js"></script>
+<script src="js/axios-0.18.0.js"></script>
+<script src="element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="element-ui/lib/theme-chalk/index.css">
+<script>
+    new Vue({
+        el:"#app",
+        data(){
+            return{
+                TStudent:[],
+                query:{},
+                dialogVisible:false,
+                addform:{
+                    name:'',
+                },
+                dialogVisible2:false,
+                updateform:{
+                    name:''
+                },
+                mers:[],
+                courseList:[]
+
+
+
+            }
+        },
+        mounted(){
+            let _this=this;
+            _this.selectStudent();
+            _this.selectGrade();
+            _this.selectcourse();
+
+        },
+        methods:{
+            selectStudent(){
+                let _this=this;
+                $.ajax({
+                    url:"tStudent/SelectAll",
+                    data:{"name":_this.query.name,"age":_this.query.age,"sage":_this.query.sage},
+                    type:"post",
+                    dataType:"json",
+                    success:function (data) {
+                      _this.TStudent=data;
+                    }
+                })
+            },
+            insertStudent(){
+                let _this=this;
+                _this.dialogVisible=true;
+            },
+            addStudent(){
+                let _this=this;
+                $.ajax({
+                    url:"tStudent/insertStudent",
+                    data:JSON.stringify(_this.addform),
+                    type:"post",
+                    dataType:"text",
+                    contentType:"application/json",
+                    success:function (data) {
+                        if (data == "增加成功") {
+                            _this.$message({
+                                showClose: true,
+                                message: '添加成功',
+                                type: 'success'
+                            });
+                            //关闭增加的表单
+                            _this.dialogVisible = false;
+                            //并把from清空
+                            _this.addform ={};
+                            //重新调用查询方法
+                            _this.selectStudent()
+                        }else{
+                            _this.message.error("增加失败哦")
+                        }
+                    }
+                })
+            },
+            deleteStudent(row){
+                let _this=this;
+                $.ajax({
+                    url:"tStudent/deleteStudent",
+                    data:{"id":row.id},
+                    type:"post",
+                    dataType:"text",
+                    success:function (data) {
+                      confirm("你缺定要删除吗？")
+                        if (data == "删除成功") {
+                            _this.$message({
+                                showClose: true,
+                                message: '删除成功',
+                                type: 'success'
+                            });
+                            //重新调用查询方法
+                            _this.selectStudent()
+                        }else{
+                            _this.message.error("删除失败哦")
+                        }
+                    }
+                })
+
+            },
+            update(row){
+                let _this=this;
+                _this.dialogVisible2=true;
+                _this.updateform=row;
+            },
+            updateStudent(){
+                let _this=this;
+                $.ajax({
+                    url:"tStudent/updateStudent",
+                    data:JSON.stringify(_this.updateform),
+                    type:"post",
+                    dataType:"text",
+                    contentType:"application/json",
+                    success:function (data) {
+                        if (data == "修改成功") {
+                            _this.$message({
+                                showClose: true,
+                                message: '修改成功',
+                                type: 'success'
+                            });
+                            //关闭增加的表单
+                            _this.dialogVisible2 = false;
+                            //并把from清空
+                            _this.updateform ={};
+                            //重新调用查询方法
+                            _this.selectStudent()
+                        }else{
+                            _this.message.error("修改失败哦")
+                        }
+                    }
+                })
+            },
+            selectGrade(){
+                let _this=this;
+                $.ajax({
+                    url:"tStudent/SelectGrade",
+                    type:"post",
+                    dataType:"json",
+                    success:function (data) {
+                        _this.mers=data;
+                    }
+                })
+            },
+            selectcourse(){
+                let _this=this;
+                $.ajax({
+                    url:"tStudent/selectcourse",
+                    type:"post",
+                    dataType:"json",
+                    success:function (data) {
+                        _this.courseList=data;
+                    }
+                })
+            }
+
+        }
+    })
+</script>
+</body>
+</html>
